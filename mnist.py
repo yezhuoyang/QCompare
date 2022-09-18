@@ -1,0 +1,1 @@
+#Compare the speed of gates in quanvolutional qnn for mnist
