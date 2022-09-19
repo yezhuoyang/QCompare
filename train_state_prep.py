@@ -45,7 +45,7 @@ class QModel(tq.QuantumModule):
         self.u3_3 = tq.U3(has_params=True, trainable=True)
 
     def forward(self, q_device: tq.QuantumDevice):
-        q_device.reset_states(1)
+        q_device.reset_states(50)
         self.u3_0(q_device, wires=0)
         self.u3_1(q_device, wires=1)
         self.cu3_0(q_device, wires=[0, 1])

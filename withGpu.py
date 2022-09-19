@@ -1,16 +1,23 @@
-# Speed comparison with pennylane
-
 import pennylane as qml
 from pennylane import numpy as np
 import random
 import time
+import torchquantum as tq
+import torch
+
+
+
+# Speed comparison with pennylane
+
+
 
 n_wires = 10
 bsz = 32
 use_gpu=True
 
+dev=dev = qml.device("lightning.gpu", wires=n_wires)
+#dev=dev = qml.device("default.qubit", wires=n_wires)
 
-dev=dev = qml.device("lightning.gpu", n_wires=n_wires)
 
 @qml.qnode(dev,interface="torch")
 def pennylane_circ(params):
@@ -22,24 +29,6 @@ def pennylane_circ(params):
     qml.ctrl(qml.Rot,control=1)(params[15],params[16],params[17],wires=0)
     return qml.state()
 
-
-
-if use_gpu:
-  device = torch.device('cuda')
-else:
-  device = torch.device('cpu')
-
-params=np.zeros(18)
-
-reps = 20
-start = time.time()
-for _ in range(reps):
-  for k in range(bsz):
-    pennylane_circ(params)
-
-end = time.time()
-pennylane_time = (end-start)/reps
-print(f"Pennylane inference time: {pennylane_time}")
 
 
 reps = 1000
@@ -67,17 +56,37 @@ class QModel(tq.QuantumModule):
         self.u3_3(q_device, wires=1)
         self.cu3_1(q_device, wires=[1, 0])
 
-tq_circ = QModel(n_wires=n_wires, bsz=bsz).to(device)
-q_device = tq.QuantumDevice(n_wires=n_wires)
+if __name__=="__main__":
+    
+    if use_gpu:
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
+
+    params=np.zeros(18)
+    reps = 20
+    start = time.time()
+    for _ in range(reps):
+        for k in range(bsz):
+            pennylane_circ(params)
+
+    end = time.time()
+    pennylane_time = (end-start)/reps
+    print(f"Pennylane inference time: {pennylane_time}")
+
+        
+    tq_circ = QModel(n_wires=n_wires, bsz=bsz).to(device)
+    q_device = tq.QuantumDevice(n_wires=n_wires)
 
 
-start = time.time()
-for _ in range(reps):
-  tq_circ(q_device)
+    start = time.time()
+    for _ in range(reps):
+        tq_circ(q_device)
 
-end = time.time()
-tq_time = (end-start)/reps
+    end = time.time()
+    tq_time = (end-start)/reps
 
-print(f"TorchQuantum inference time {tq_time}; is {pennylane_time/tq_time} X faster")
+    print(f"TorchQuantum inference time {tq_time}; is {pennylane_time/tq_time} X faster")
+
 
 
