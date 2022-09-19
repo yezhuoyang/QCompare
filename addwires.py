@@ -62,13 +62,13 @@ if __name__=="__main__":
         Define the circuit by torchquantum
         '''
         class QModel(tq.QuantumModule):
-            def __init__(self, bsz, q_depth,n_qubits):
+            def __init__(self,q_device, bsz, q_depth,n_qubits):
                 super().__init__()
                 self.bsz = bsz
                 self.n_wires = n_qubits
                 self.n_layers=q_depth
                 self.RY_noise=[]
-                
+                self.q_device=q_device
                 # Initialise latent vectors
                 for i in range(n_qubits):
                     self.RY_noise.append(tq.RY(has_params=True, trainable=True))
@@ -99,7 +99,7 @@ if __name__=="__main__":
                     for y in range(n_qubits-1):
                         self.CZ_dic[i][y](q_device,wires=[y,y+1])    
 
-                return #self.measure(self.q_device)
+                return self.measure(self.q_device)
     
             
         if use_gpu:
@@ -123,10 +123,12 @@ if __name__=="__main__":
         penny_time_list.append(pennylane_time)
         print(f"Pennylane inference time: {pennylane_time}")
 
-          
-        tq_circ = QModel(bsz=bsz,q_depth=q_depth,n_qubits=n_wires).to(device)
-        q_device = tq.QuantumDevice(n_wires=n_wires)
 
+
+        q_device = tq.QuantumDevice(n_wires=n_wires)
+        tq_circ = QModel(bsz=bsz,q_device=q_device,q_depth=q_depth,n_qubits=n_wires).to(device)
+     
+          
 
         start = time.time()
         for _ in range(reps):
